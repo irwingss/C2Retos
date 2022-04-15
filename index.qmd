@@ -4,12 +4,10 @@ author: "Irwing S. Saldaña"
 date: '2022-03-18'
 format:
  html:
+    code-fold: true
     toc: true
     toc-location: right
     toc-title: Contenidos
-    code-fold: true
-    code-link: true
-    code-tools: true
 editor_options: 
   chunk_output_type: console
 editor: visual
@@ -36,7 +34,7 @@ library(see)
 library(showtext)
 library(ggcorrplot)
 
-knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo = FALSE)
 ```
 
 # 9. Visualización de cantidades y proporciones
@@ -126,7 +124,7 @@ headache %>%
 
 # 11. Visualización de distribuciones en simultáneo con funciones de densidad
 
-## 11.1. Como funciones de densidad clásicas
+## 11.1. Con funciones de densidad clásicas
 
 ```{r}
 #| fig-width: 8

@@ -36,7 +36,7 @@ library(see)
 library(showtext)
 library(ggcorrplot)
 
-knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo = FALSE)
 ```
 
 # 9. Visualización de cantidades y proporciones

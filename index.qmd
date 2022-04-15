@@ -106,8 +106,10 @@ headache %>%
 # 10. Visualización de histogramas
 
 ```{r}
+# Activar base de datos
+data("headache")
+
 # Código del gráfico
-data("iris")
 headache %>% 
   mutate(risk = factor(risk, labels = c("high"="Alto",
                                         "low"="Bajo")),

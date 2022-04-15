@@ -7,9 +7,6 @@ format:
     toc: true
     toc-location: right
     toc-title: Contenidos
-    code-fold: true
-    code-link: true
-    code-tools: true
 editor_options: 
   chunk_output_type: console
 editor: visual

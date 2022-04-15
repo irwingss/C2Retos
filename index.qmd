@@ -1,0 +1,362 @@
+---
+title: "Gráficos estadísticos avanzados con ggplot2 - Módulo 2"
+author: "Irwing S. Saldaña"
+date: '2022-03-18'
+format:
+ html:
+    toc: true
+    toc-location: right
+    toc-title: Contenidos
+    code-fold: true
+    code-link: true
+    code-tools: true
+editor_options: 
+  chunk_output_type: console
+editor: visual
+---
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# Librerías
+# install.packages("datarium")
+# install.packages("viridis")
+# install.packages("ggridges")
+# install.packages("gghighlight")
+# install.packages('showtext)
+# install.packages("see")
+# install.packages("showtext")
+# install.packages("ggcorrplot")
+
+library(tidyverse)
+library(datarium)
+library(boot)
+library(ggridges)
+library(gghighlight)
+library(treemapify)
+library(see)
+library(showtext)
+library(ggcorrplot)
+
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+# 9. Visualización de cantidades y proporciones
+
+## 9.1. Reto gráfico de barras laterales:
+
+```{r}
+# Activar base de datos
+data("headache")
+
+# Código del gráfico
+headache %>% 
+  group_by(gender, risk, treatment) %>% 
+  summarise(pain_prom = mean(pain_score),
+            pain_sd = sd(pain_score)) %>% 
+  ungroup() %>% 
+  mutate(risk = factor(risk, labels = c("high"="Alto",
+                                        "low"="Bajo")),
+         gender = factor(gender, labels = c("male"="Hombre",
+                                            "female"="Mujer"))) %>% 
+  ggplot(aes(x=gender, y=pain_prom, fill=risk))+
+  geom_bar(stat="identity", position = "dodge")+
+  facet_grid(.~treatment) +
+  labs(x="Género", y="Promedio del puntaje de dolor",
+       fill="Riesgo")+
+  scale_fill_manual(values=c("#34c3eb",
+                             "#59008a"))+
+  ggthemes::theme_clean() +
+  geom_errorbar(aes(ymax=(pain_prom+pain_sd),
+                    ymin=(pain_prom-pain_sd)), 
+                position = position_dodge(width=0.9),
+                width=0.2)+
+  theme(legend.background = element_rect(colour = "white"),
+        legend.position = "top")
+```
+
+## 9.2. Reto gráfico de barras laterales:
+
+```{r}
+# Código del gráfico
+headache %>% 
+  group_by(gender, risk, treatment) %>% 
+  summarise(pain_prom = mean(pain_score)) %>%
+  mutate(perc = (pain_prom/sum(pain_prom)),
+         perc_lab = scales::percent(perc)) %>% 
+  ungroup() %>% 
+  mutate(risk = factor(risk, labels = c("high"="Alto",
+                                        "low"="Bajo")),
+         gender = factor(gender, labels = c("male"="Hombre",
+                                            "female"="Mujer"))) %>% 
+  ggplot(aes(x=gender, y=pain_prom, fill=risk))+
+  geom_bar(stat="identity", position = "fill")+
+  facet_grid(.~treatment) +
+  labs(x="Género", 
+       y="Promedio del puntaje de dolor",
+       fill="Riesgo")+
+  scale_fill_manual(values=c("firebrick",
+                             "dodgerblue3"))+
+  scale_y_continuous(labels = scales::percent)+
+  geom_text(aes(label=perc_lab), position = position_fill(vjust=0.5),
+            color="white")+
+  ggthemes::theme_clean() +
+  theme(legend.background = element_rect(colour = "white"),
+        legend.position = "top")
+```
+
+# 10. Visualización de histogramas
+
+```{r}
+# Código del gráfico
+data("iris")
+headache %>% 
+  mutate(risk = factor(risk, labels = c("high"="Alto",
+                                        "low"="Bajo")),
+         gender = factor(gender, labels = c("male"="Hombre",
+                                            "female"="Mujer"))) %>% 
+  ggplot(aes(x=pain_score))+
+  geom_histogram(aes(y = ..density.., fill=gender))+
+  geom_density(size=1)+
+  scale_fill_manual(values=c("#34c3eb","#448700"))+
+  labs(x="Puntaje de dolor", y="Densidad", fill="")+
+  facet_grid(gender~risk)+
+  ggthemes::theme_stata()
+```
+
+# 11. Visualización de distribuciones en simultáneo con funciones de densidad
+
+## 11.1. Como funciones de densidad clásicas
+
+```{r}
+#| fig-width: 8
+#| fig-height: 6
+
+# Código del gráfico
+data("iris")
+headache %>%
+  mutate(risk = factor(risk, labels = c("high"="Alto",
+                                        "low"="Bajo")),
+         gender = factor(gender, labels = c("male"="Hombre",
+                                            "female"="Mujer"))) %>% 
+  ggplot(aes(x=pain_score, color=gender, fill=gender, lty=risk))+
+  geom_density(size=1, alpha = 0.20)+
+  labs(x="Puntaje de dolor", y="Densidad", color="Género", fill="Género", lty="Riesgo")+
+  ggthemes::theme_stata()+
+  theme(legend.position = c(0.93,0.82),
+        legend.background = element_blank()) 
+```
+
+## 11.2. Con gghighlight para resaltar las densidades
+
+```{r}
+#| fig-width: 8
+#| fig-height: 3
+
+# Carga de la base de datos
+data("iris")
+
+# Código del gráfico
+iris %>% 
+  ggplot(aes(x=Sepal.Width, group=Species))+
+  geom_density(fill="#e61a0b", color="#e61a0b", alpha=0.65)+
+  gghighlight(unhighlighted_params = lst(fill="#ffe0c2", 
+                                         color="#ebb47f")) +
+  facet_wrap(~Species)+
+  theme_minimal()+
+  theme(strip.text = element_text(face=3))+
+  labs(x="Ancho de Sépalo (cm)",
+       y="Función de Densidad")
+```
+
+## 11.2. Con ggridges para mostrarlas en paralelo
+
+```{r}
+# Carga de la base de datos
+data("airquality")
+
+# Código del gráfico
+airquality %>% 
+  mutate(Month = factor(Month, labels = c("5"="Mayo",
+                                          "6"="Junio",
+                                          "7"="Julio",
+                                          "8"="Agosto",
+                                          "9"="Setiembre"))) %>% 
+  ggplot(aes(x=Temp, y= forcats::fct_rev(Month)))+
+  geom_density_ridges_gradient(aes(fill=..density..))+
+  viridis::scale_fill_viridis(option = "plasma")+
+  theme_ridges()+
+  theme(legend.position = "top",
+        legend.justification = "right",
+        legend.key.width= unit(2.5, 'cm'),
+        legend.direction = "horizontal",
+        axis.title.x = element_text(hjust = 0.5))+
+  guides(fill = guide_colorbar(title.position = "top",
+                               title.hjust = 1))+
+  labs(x="Temperatura (°C)", y="", fill="Densidad de la temperatura")
+
+```
+
+# 12. Visualización variables numéricas con heatmaps
+
+```{r}
+# Carga de la base de datos
+library(gapminder)
+data("gapminder")
+
+# Código del gráfico
+gapminder %>% 
+  mutate(year = as.factor(year),
+         country = as.factor(country)) %>% 
+  filter(continent == "Americas") %>% 
+  ggplot(aes(x=year, y=forcats::fct_rev(country), fill=lifeExp))+
+  geom_tile(color="white")+
+  viridis::scale_fill_viridis(option = "inferno", direction = 1)+
+  theme_minimal()+
+  theme(legend.position = "top",
+        legend.justification = "left",
+        legend.key.width= unit(2.5, 'cm'),
+        legend.direction = "horizontal")+
+  guides(fill = guide_colorbar(title.position = "top"))+
+  labs(x="Año", y="", fill="Expectativa de vida")+
+  scale_y_discrete(position = "right")
+```
+
+# 13. Visualización de proporciones con Treemaps
+
+```{r}
+#| fig-width: 8
+#| fig-height: 8
+
+# Carga de la base de datos
+library(treemapify)
+library(gapminder)
+data("gapminder")
+
+# Código del gráfico
+gapminder %>% 
+  filter(continent == "Americas" & year == 2007) %>%
+  mutate(gdp_categ = cut(gdpPercap, 3, 
+                         labels = c("PIB Bajo", 
+                                    "PBI Medio",
+                                    "PBI Alto"))) %>% 
+  ggplot(aes(area = pop, fill=gdp_categ, label=country))+
+  geom_treemap()+
+  geom_treemap_text(colour = "white", place = "center",
+                    reflow = TRUE)+
+  see::scale_fill_flat(reverse = TRUE)+
+  labs(fill = "Rango de PIB")+
+  theme(legend.position = "top")
+```
+
+# 14. Visualización de asociaciones
+
+```{r}
+# Carga de la base de datos
+library(boot)
+data("urine")
+urine <- na.omit(urine)
+
+# Crear la matriz de correlaciones
+# y la matriz de p-valores
+correlaciones <- urine %>% cor(method = "pearson") %>% round(1)
+pmat <- cor_pmat(urine) %>% round(1)
+
+# Código del gráfico
+ggcorrplot(correlaciones, type = "lower", 
+           legend.title = "", outline.color = "white",
+           hc.order = TRUE, lab = TRUE, p.mat = pmat,
+           insig = "blank",
+           colors = c("#ff2e9a","#f5ffbd","#2e96ff"))
+```
+
+# 15. Visualización de series temporales
+
+```{r}
+# Carga de la base de datos
+data("economics")
+datos_eco <- economics %>%
+  select(date, psavert, uempmed) %>%
+  gather(key = "variable", value = "value", -date) %>% 
+  rename(fecha = date, valor = value) %>% 
+  mutate(fecha = as.character(fecha))
+
+str(datos_eco)
+
+# Cómo funcionan las fechas en R
+as.Date("2015-10-19 10:15")
+as.Date("2015-10-19 CUALQUIER COSA")
+
+as.POSIXct("2015-10-19 10:15")
+
+# Transformar la columna fecha en Date Object
+datos_eco <- datos_eco %>% 
+  mutate(fecha = as.POSIXct(fecha))
+
+datos_eco <- datos_eco %>% 
+  mutate(fecha = as.Date(fecha))
+
+# Código del gráfico
+# Códigos para las etiquetas de Fechas: 
+# %Y = 2000, %y = 00, %B = Enero, %b = Ene.
+# %d = número del día, %D = fecha completa 01/01/2020
+# %H:%M - hora:minuto 10:55
+
+ggplot(datos_eco, aes(x = fecha, y = valor)) + 
+  geom_line(aes(color = variable)) +
+  scale_x_date(limits = c(as.Date("2000-1-1"), NA),
+               date_breaks = "2 year",
+               date_labels = "%Y")+ 
+  theme_minimal()+
+  labs(x="", y="Medición importante", color="Variantes")
+```
+
+# 16. Cambiando el tipo de letra de los gráficos
+
+```{r}
+# Definir un gráfico a modificar
+GRAFICO1 <- airquality %>% 
+  mutate(Month = factor(Month, labels = c("5"="Mayo",
+                                          "6"="Junio",
+                                          "7"="Julio",
+                                          "8"="Agosto",
+                                          "9"="Setiembre"))) %>% 
+  ggplot(aes(x=Temp, y= forcats::fct_rev(Month)))+
+  geom_density_ridges_gradient(aes(fill=..density..))+
+  viridis::scale_fill_viridis(option = "plasma")+
+  theme_ridges()+
+  theme(legend.position = "top",
+        legend.justification = "right",
+        legend.key.width= unit(2.5, 'cm'),
+        legend.direction = "horizontal",
+        axis.title.x = element_text(hjust = 0.5))+
+  guides(fill = guide_colorbar(title.position = "top",
+                               title.hjust = 1))+
+  labs(x="Temperatura (°C)", y="", fill="Densidad de la temperatura")
+
+# Revisando las fuentes disponibles 
+windowsFonts()
+
+# Adicionando el cambio de fuente
+GRAFICO1 + 
+  theme(text=element_text(family="mono"))
+
+# Usando showtext para revisar las fuentes disponibles en Fonts
+library(showtext)
+font_files() %>% head()    
+
+# Usando showtext para adicionar más fuentes
+font_add("Candara", "Candara.ttf")
+font_add("Garamond", "GARA.TTF")
+
+# Revisando las fuentes instaladas con showtext
+font_families()
+
+# Gráfico con nueva fuente con showtext
+# Se de activar y desactivar el uso de showtext
+showtext_auto()
+
+GRAFICO1 + 
+  theme(text=element_text(family="Garamond", size=20),
+        axis.text = element_text(size=20))
+
+showtext_auto(FALSE)
+```

@@ -286,6 +286,7 @@ as.Date("2015-10-19 10:15")
 as.Date("2015-10-19 CUALQUIER COSA")
 
 as.POSIXct("2015-10-19 10:15")
+as.POSIXct("2015-10-19 CUALQUIER COSA")
 
 # Transformar la columna fecha en Date Object
 datos_eco <- datos_eco %>% 
